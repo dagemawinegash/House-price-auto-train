@@ -131,9 +131,9 @@ class HousePricePredictor:
         print(f"Retraining model with {num_new_samples} new samples...")
 
         try:
-            # load existing data
+            # load existing data (original 545 samples)
             existing_data = self.load_dataset()
-            print(f"Loaded existing data: {existing_data.shape}")
+            print(f"Loaded original data: {existing_data.shape}")
 
             # generate new data
             generator = HousingDataGenerator()
@@ -143,9 +143,29 @@ class HousePricePredictor:
                 print("Error: Failed to generate new data")
                 return False
 
-            # combine existing and new data
-            combined_data = pd.concat([existing_data, new_data], ignore_index=True)
-            print(f"Combined dataset shape: {combined_data.shape}")
+            # check if we have previous accumulated data
+            accumulated_data_path = os.path.join(
+                os.path.dirname(os.path.abspath(__file__)), "accumulated_data.csv"
+            )
+
+            if os.path.exists(accumulated_data_path):
+                # load previous accumulated data
+                accumulated_data = pd.read_csv(accumulated_data_path)
+                print(f"Loaded accumulated data: {accumulated_data.shape}")
+
+                # combine: accumulated + new data
+                combined_data = pd.concat(
+                    [accumulated_data, new_data], ignore_index=True
+                )
+                print(f"Combined dataset (accumulated + new): {combined_data.shape}")
+            else:
+                # first time: original + new data
+                combined_data = pd.concat([existing_data, new_data], ignore_index=True)
+                print(f"Combined dataset (original + new): {combined_data.shape}")
+
+            # save accumulated data for next time
+            combined_data.to_csv(accumulated_data_path, index=False)
+            print(f"Saved accumulated data: {combined_data.shape}")
 
             # set the combined data and retrain
             self.data = combined_data
