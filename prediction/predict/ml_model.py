@@ -2,9 +2,10 @@ import joblib
 import numpy as np
 import pandas as pd
 import os
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error
 
 
 class HousePricePredictor:
@@ -122,6 +123,21 @@ class HousePricePredictor:
 
         self.model = LinearRegression()
         self.model.fit(X_train_scaled, y_train)
+
+        # cross-validation (5-fold)
+        print("Performing 5-fold cross-validation...")
+        cv_scores = cross_val_score(
+            self.model, X_train_scaled, y_train, cv=5, scoring="neg_mean_squared_error"
+        )
+        cv_rmse = np.sqrt(-cv_scores)
+        print(f"Cross-validation RMSE scores: {cv_rmse}")
+        print(f"Mean CV RMSE: {cv_rmse.mean():.2f} (+/- {cv_rmse.std() * 2:.2f})")
+
+        # test set performance
+        X_test_scaled = scaler.transform(X_test)
+        y_pred = self.model.predict(X_test_scaled)
+        test_rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+        print(f"Test set RMSE: {test_rmse:.2f}")
 
         # Save scaler, model, and feature names
         model_dir = os.path.dirname(os.path.abspath(__file__))
