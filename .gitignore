@@ -44,6 +44,12 @@ static/
 # *.h5
 # *.pth
 
+# Dataset files
+Housing.csv
+*.csv
+
+*.joblib
+
 # IDE
 .vscode/
 .idea/
