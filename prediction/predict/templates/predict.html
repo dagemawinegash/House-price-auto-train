@@ -3,26 +3,160 @@
 
 <head>
     <title>House Price Predictor</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+        }
+
+        .form-group {
+            margin: 15px 0;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        input,
+        select {
+            padding: 8px;
+            width: 200px;
+        }
+
+        .error {
+            color: red;
+            margin: 10px 0;
+        }
+
+        .success {
+            color: green;
+            margin: 10px 0;
+        }
+
+        .form-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+        }
+
+        h2 {
+            color: #333;
+        }
+    </style>
 </head>
 
 <body>
     <h1>House Price Prediction</h1>
+
+    {% if error_message %}
+    <div class="error">{{ error_message }}</div>
+    {% endif %}
+
     <form method="post">
         {% csrf_token %}
-        <label>House Size (sq ft):</label>
-        <input type="number" name="size" required><br>
 
-        <label>Number of Bedrooms:</label>
-        <input type="number" name="bedrooms" required><br>
+        <div class="form-section">
+            <h2>Basic Information</h2>
 
-        <label>House Age (years):</label>
-        <input type="number" name="age" required><br>
+            <div class="form-group">
+                <label>House Area (sq ft):</label>
+                <input type="number" name="area" step="0.01" min="1" required>
+            </div>
 
-        <input type="submit" value="Predict Price">
+            <div class="form-group">
+                <label>Number of Bedrooms:</label>
+                <input type="number" name="bedrooms" min="1" required>
+            </div>
+
+            <div class="form-group">
+                <label>Number of Bathrooms:</label>
+                <input type="number" name="bathrooms" min="1" required>
+            </div>
+
+            <div class="form-group">
+                <label>Number of Stories:</label>
+                <input type="number" name="stories" min="1" required>
+            </div>
+
+            <div class="form-group">
+                <label>Parking Spaces:</label>
+                <input type="number" name="parking" min="0" required>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h2>Property Features</h2>
+
+            <div class="form-group">
+                <label>Main Road Access:</label>
+                <select name="mainroad" required>
+                    <option value="yes">Yes</option>
+                    <option value="no">No</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Guest Room:</label>
+                <select name="guestroom" required>
+                    <option value="no">No</option>
+                    <option value="yes">Yes</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Basement:</label>
+                <select name="basement" required>
+                    <option value="no">No</option>
+                    <option value="yes">Yes</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Hot Water Heating:</label>
+                <select name="hotwaterheating" required>
+                    <option value="no">No</option>
+                    <option value="yes">Yes</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Air Conditioning:</label>
+                <select name="airconditioning" required>
+                    <option value="no">No</option>
+                    <option value="yes">Yes</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Preferred Area:</label>
+                <select name="prefarea" required>
+                    <option value="no">No</option>
+                    <option value="yes">Yes</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Furnishing Status:</label>
+                <select name="furnishingstatus" required>
+                    <option value="unfurnished">Unfurnished</option>
+                    <option value="semi-furnished">Semi-furnished</option>
+                    <option value="furnished">Furnished</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <input type="submit" value="Predict Price"
+                style="background-color: #4CAF50; color: white; padding: 12px 24px; border: none; cursor: pointer; font-size: 16px;">
+        </div>
     </form>
 
     {% if prediction %}
-    <h2>Predicted Price: ${{ prediction }}</h2>
+    <div class="success">
+        <h2>Predicted Price: ${{ prediction|floatformat:2 }}</h2>
+    </div>
     {% endif %}
 </body>
 
