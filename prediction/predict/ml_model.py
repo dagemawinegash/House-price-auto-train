@@ -5,8 +5,13 @@ import os
 from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LinearRegression
-from sklearn.metrics import mean_squared_error
-from data_generator import HousingDataGenerator
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_squared_error, mean_absolute_error
+
+try:
+    from .data_generator import HousingDataGenerator
+except ImportError:
+    from data_generator import HousingDataGenerator
 
 
 class HousePricePredictor:
@@ -220,8 +225,6 @@ class HousePricePredictor:
         )
         print(f"All features: {all_features}")
 
-        print(f"Missing values: {self.data[all_features].isnull().sum()}")
-
         # remove rows with missing values
         self.data = self.data.dropna(subset=all_features + ["price"])
         print(f"Dataset shape after removing missing values: {self.data.shape}")
@@ -238,25 +241,52 @@ class HousePricePredictor:
 
         scaler = StandardScaler()
         X_train_scaled = scaler.fit_transform(X_train)
+        X_test_scaled = scaler.transform(X_test)
 
-        self.model = LinearRegression()
+        # Define models to compare
+        models = {
+            "Linear Regression": LinearRegression(),
+            "Random Forest": RandomForestRegressor(n_estimators=100, random_state=42),
+        }
+
+        # Compare models using cross-validation
+        print("Comparing models...")
+        best_model = None
+        best_score = float("inf")
+        best_model_name = ""
+
+        for name, model in models.items():
+            print(f"Evaluating {name}...")
+
+            # Cross-validation
+            cv_scores = cross_val_score(
+                model, X_train_scaled, y_train, cv=5, scoring="neg_mean_squared_error"
+            )
+            cv_rmse = np.sqrt(-cv_scores)
+            mean_cv_rmse = cv_rmse.mean()
+
+            print(
+                f"{name} - Cross-validation RMSE: {mean_cv_rmse:.2f} (+/- {cv_rmse.std() * 2:.2f})"
+            )
+
+            if mean_cv_rmse < best_score:
+                best_score = mean_cv_rmse
+                best_model = model
+                best_model_name = name
+
+        print(f"\nBest model: {best_model_name} with RMSE: {best_score:.2f}")
+
+        # Train the best model
+        self.model = best_model
         self.model.fit(X_train_scaled, y_train)
 
-        # Cross-validation
-        print("Performing cross-validation...")
-        cv_scores = cross_val_score(
-            self.model, X_train_scaled, y_train, cv=5, scoring="neg_mean_squared_error"
-        )
-        cv_rmse = np.sqrt(-cv_scores)
-        print(
-            f"Cross-validation RMSE: {cv_rmse.mean():.2f} (+/- {cv_rmse.std() * 2:.2f})"
-        )
-
-        # Test set performance
-        X_test_scaled = scaler.transform(X_test)
+        # Final evaluation on test set
         y_pred = self.model.predict(X_test_scaled)
         test_rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+        test_mae = mean_absolute_error(y_test, y_pred)
+
         print(f"Test set RMSE: {test_rmse:.2f}")
+        print(f"Test set MAE: {test_mae:.2f}")
 
         # Save model files
         model_dir = os.path.dirname(os.path.abspath(__file__))
